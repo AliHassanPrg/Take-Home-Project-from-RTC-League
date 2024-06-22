@@ -4,7 +4,7 @@ let scene, camera, renderer, ball;
 
 async function updatePosition(x, y, z) {
     try {
-        const response = await fetch('http://127.0.0.1:5000/login/position', {
+        const response = await fetch('http://127.0.0.1:5000/position', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -36,7 +36,7 @@ function init() {
     scene.add(ball);
 
     // Fetch initial position
-    fetch('http://127.0.0.1:5000/login/position')
+    fetch('http://127.0.0.1:5000/position')
         .then(response => response.json())
         .then(data => {
             ball.position.set(data.x, data.y, data.z);
@@ -57,7 +57,7 @@ function updateBallPosition() {
 
 async function logout() {
     try {
-        const response = await fetch('http://127.0.0.1:5000/login/logout', {
+        const response = await fetch('http://127.0.0.1:5000/logout', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
