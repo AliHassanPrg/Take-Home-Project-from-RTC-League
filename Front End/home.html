@@ -7,11 +7,78 @@
     <style>
         body { margin: 0; }
         canvas { display: block; }
+        .navbar {
+            width: 100%;
+            padding: 10px;
+            background-color: #36454f;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .navbar input {
+            margin: 0 10px;
+            padding: 5px;
+            border: none;
+            border-radius: 5px;
+        }
+        .navbar button {
+            height: 50px;
+            width: 150px;
+            border-radius: 5px;
+            position: relative;
+            overflow: hidden;
+        }
+        .navbar button .btn-layer {
+            height: 100%;
+            width: 300%;
+            position: absolute;
+            left: -100%;
+            background: -webkit-linear-gradient(right, #36454f, #d3d3d3, #36454f, #d3d3d3);
+            border-radius: 5px;
+            transition: all 0.4s ease;
+        }
+        .navbar button:hover .btn-layer {
+            left: 0;
+        }
+        .navbar button input[type="button"] {
+            height: 100%;
+            width: 100%;
+            z-index: 1;
+            position: relative;
+            background: none;
+            border: none;
+            color: #fff;
+            padding-left: 0;
+            border-radius: 5px;
+            font-size: 20px;
+            font-weight: 500;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
+    <div class="navbar">
+        <div>
+            <label for="xCoord">X:</label>
+            <input type="number" id="xCoord" placeholder="X Coordinate">
+            <label for="yCoord">Y:</label>
+            <input type="number" id="yCoord" placeholder="Y Coordinate">
+            <label for="zCoord">Z:</label>
+            <input type="number" id="zCoord" placeholder="Z Coordinate">
+            <button onclick="updateBallPosition()">
+                <div class="btn-layer"></div>
+                <input type="button" value="Set Position">
+            </button>
+        </div>
+        <button onclick="logout()">
+            <div class="btn-layer"></div>
+            <input type="button" value="Logout">
+        </button>
+    </div>
     <canvas id="canvas"></canvas>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
     <script src="static/main.js"></script>
 </body>
 </html>

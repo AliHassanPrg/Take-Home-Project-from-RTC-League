@@ -1,100 +1,85 @@
-document.addEventListener('DOMContentLoaded', function () {
-    let scene, camera, renderer, ball, raycaster, mouse;
-    let isDragging = false;
-    let dragOffset = new THREE.Vector3();
+const socket = io('http://127.0.0.1:5000/login');
 
-    function init() {
-        // Create scene
-        scene = new THREE.Scene();
+let scene, camera, renderer, ball;
 
-        // Create camera
-        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.z = 5;
-
-        // Create renderer
-        renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas') });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.body.appendChild(renderer.domElement);
-
-        // Create a ball (sphere geometry)
-        const geometry = new THREE.SphereGeometry(0.5, 32, 32);
-        const material = new THREE.MeshBasicMaterial({ color: 0xd3d3d3 });
-        ball = new THREE.Mesh(geometry, material);
-        scene.add(ball);
-
-        // Create raycaster and mouse vector
-        raycaster = new THREE.Raycaster();
-        mouse = new THREE.Vector2();
-
-        // Add event listeners for mouse events
-        document.addEventListener('mousedown', onMouseDown, false);
-        document.addEventListener('mousemove', onMouseMove, false);
-        document.addEventListener('mouseup', onMouseUp, false);
-
-        // Start animation loop
-        animate();
-    }
-
-    function onMouseDown(event) {
-        // Update mouse vector
-        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-        // Update raycaster
-        raycaster.setFromCamera(mouse, camera);
-
-        // Check for intersections
-        const intersects = raycaster.intersectObject(ball);
-
-        if (intersects.length > 0) {
-            isDragging = true;
-            dragOffset.copy(intersects[0].point).sub(ball.position);
-            console.log('Drag started:', dragOffset);
+async function updatePosition(x, y, z) {
+    try {
+        const response = await fetch('http://127.0.0.1:5000/login/position', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ x, y, z }),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.message || 'Error updating position');
         }
+    } catch (err) {
+        console.error('Error updating position:', err);
     }
+}
 
-    function onMouseMove(event) {
-        if (isDragging) {
-            // Update mouse vector
-            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+function init() {
+    scene = new THREE.Scene();
 
-            // Update raycaster
-            raycaster.setFromCamera(mouse, camera);
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.z = 5;
 
-            // Calculate new position
-            const planeZ = new THREE.Plane(new THREE.Vector3(0, 0, 1), -camera.position.z);
-            const pos = new THREE.Vector3();
-            raycaster.ray.intersectPlane(planeZ, pos);
+    renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas') });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
 
-            // Adjust ball position based on the drag offset
-            pos.sub(dragOffset);
-            ball.position.set(pos.x, pos.y, ball.position.z); // Keep the ball's z coordinate constant
-            console.log('Ball position:', ball.position);
+    const geometry = new THREE.SphereGeometry(0.5, 32, 32);
+    const material = new THREE.MeshBasicMaterial({ color: 0xd3d3d3 });
+    ball = new THREE.Mesh(geometry, material);
+    scene.add(ball);
+
+    // Fetch initial position
+    fetch('http://127.0.0.1:5000/login/position')
+        .then(response => response.json())
+        .then(data => {
+            ball.position.set(data.x, data.y, data.z);
+        })
+        .catch(err => console.error('Error fetching initial position:', err));
+
+    animate();
+}
+
+function updateBallPosition() {
+    const x = parseFloat(document.getElementById('xCoord').value);
+    const y = parseFloat(document.getElementById('yCoord').value);
+    const z = parseFloat(document.getElementById('zCoord').value);
+
+    ball.position.set(x, y, z);
+    updatePosition(x, y, z);
+}
+
+async function logout() {
+    try {
+        const response = await fetch('http://127.0.0.1:5000/login/logout', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        if (response.ok) {
+            window.location.href = '/';
+        } else {
+            alert('Logout failed');
         }
+    } catch (err) {
+        console.error('Error logging out:', err);
     }
+}
 
-    function onMouseUp() {
-        if (isDragging) {
-            console.log('Drag ended');
-        }
-        isDragging = false;
-    }
+function animate() {
+    requestAnimationFrame(animate);
+    renderer.render(scene, camera);
+}
 
-    function animate() {
-        requestAnimationFrame(animate);
-        renderer.render(scene, camera);
-    }
-
-    // Handle window resize
-    window.addEventListener('resize', onWindowResize, false);
-
-    function onWindowResize() {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-    }
-
-    // Initialize the scene
-    init();
+socket.on('update_position', function(data) {
+    ball.position.set(data.x, data.y, data.z);
 });
+
+init();

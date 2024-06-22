@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_session import Session
 import secrets
 from flask_cors import CORS
+from flask_socketio import SocketIO, emit
 import os
 
 app = Flask(__name__, static_folder='../Front End/static', static_url_path='/static')
@@ -14,6 +15,7 @@ app.config['SECRET_KEY'] = secrets.token_hex(16)
 app.config['SESSION_TYPE'] = 'filesystem'
 db = SQLAlchemy(app)
 Session(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 class UserModel(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -23,13 +25,23 @@ class UserModel(db.Model):
 
     def __repr__(self):
         return f"User(username={self.username}, email={self.email}, password={self.password})"
-    
+
+class BallPosition(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    x = db.Column(db.Float, nullable=False)
+    y = db.Column(db.Float, nullable=False)
+    z = db.Column(db.Float, nullable=False)
+
+    def __repr__(self):
+        return f"BallPosition(x={self.x}, y={self.y}, z={self.z})"
+
+   
 @app.route('/')
 def index():
     return send_from_directory(os.path.join(app.root_path, '..', 'Front End'), 'index.html')
-# @app.route('/static/<path:filename>')
-# def static_files(filename):
-#     return send_from_directory(os.path.join(app.root_path, '..', 'Front End', 'static'), filename)
+@app.route('/home.html')
+def home():
+    return send_from_directory(os.path.join(app.root_path, '..', 'Front End'), 'home.html')
 
 @app.route('/register', methods=['POST'])
 def register():
@@ -84,7 +96,30 @@ def protected():
 
     return jsonify({"message": f"Hello, {session['username']}!"}), 200
 
+@app.route('/position', methods=['POST'])
+def update_position():
+    data = request.get_json()
+    x = data.get('x')
+    y = data.get('y')
+    z = data.get('z')
+
+    new_position = BallPosition(x=x, y=y, z=z)
+    db.session.add(new_position)
+    db.session.commit()
+
+    socketio.emit('update_position', {'x': x, 'y': y, 'z': z}, broadcast=True)
+    return jsonify({"message": "Position updated successfully"}), 201
+
+@app.route('/position', methods=['GET'])
+def get_position():
+    position = BallPosition.query.order_by(BallPosition.id.desc()).first()
+    if position:
+        return jsonify({"x": position.x, "y": position.y, "z": position.z}), 200
+    else:
+        return jsonify({"message": "No position found"}), 404
+
+
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
-    app.run(debug=True)
+    socketio.run(app, debug=True)
