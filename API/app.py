@@ -107,7 +107,7 @@ def update_position():
     db.session.add(new_position)
     db.session.commit()
 
-    socketio.emit('update_position', {'x': x, 'y': y, 'z': z}, broadcast=True)
+    socketio.emit('update_position', {'x': x, 'y': y, 'z': z},to = None)
     return jsonify({"message": "Position updated successfully"}), 201
 
 @app.route('/position', methods=['GET'])

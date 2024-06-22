@@ -30,7 +30,7 @@ function init() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
-    const geometry = new THREE.SphereGeometry(0.5, 32, 32);
+    const geometry = new THREE.SphereGeometry(0.25, 15, 15);
     const material = new THREE.MeshBasicMaterial({ color: 0xd3d3d3 });
     ball = new THREE.Mesh(geometry, material);
     scene.add(ball);
@@ -51,8 +51,12 @@ function updateBallPosition() {
     const y = parseFloat(document.getElementById('yCoord').value);
     const z = parseFloat(document.getElementById('zCoord').value);
 
-    ball.position.set(x, y, z);
-    updatePosition(x, y, z);
+    if (x >= -7.5 && x <= 7.5 && y >= -3.5 && y <= 3.5 && z >= -4.0 && z <= 4.0) {
+        ball.position.set(x, y, z);
+        updatePosition(x, y, z);
+    } else {
+        alert('Please enter values within the allowed range:\nX: -7.5 to 7.5\nY: -3.5 to 3.5\nZ: -4.0 to 4.0');
+    }
 }
 
 async function logout() {
@@ -64,7 +68,7 @@ async function logout() {
             }
         });
         if (response.ok) {
-            window.location.href = '/';
+            window.location.href = 'index.html';
         } else {
             alert('Logout failed');
         }
