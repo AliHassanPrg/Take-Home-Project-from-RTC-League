@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, session, redirect, url_for, send_from_directory
+from flask import Flask, request, jsonify, session, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_session import Session
 import secrets
@@ -88,13 +88,6 @@ def logout():
     session.pop('user_id', None)
     session.pop('username', None)
     return jsonify({"message": "Logged out successfully"}), 200
-
-@app.route('/protected', methods=['GET'])
-def protected():
-    if 'user_id' not in session:
-        return jsonify({"message": "Not authenticated"}), 401
-
-    return jsonify({"message": f"Hello, {session['username']}!"}), 200
 
 @app.route('/position', methods=['POST'])
 def update_position():
