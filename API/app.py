@@ -1,10 +1,11 @@
-from flask import Flask, request, jsonify, session, send_from_directory
+from flask import Flask, request, jsonify, session, send_from_directory, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_session import Session
 import secrets
 from flask_cors import CORS
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO
 import os
+from functools import wraps
 
 app = Flask(__name__, static_folder='../Front End/static', static_url_path='/static')
 
@@ -23,25 +24,16 @@ class UserModel(db.Model):
     email = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(150), nullable=False)
 
-    def __repr__(self):
-        return f"User(username={self.username}, email={self.email}, password={self.password})"
-
 class BallPosition(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     x = db.Column(db.Float, nullable=False)
     y = db.Column(db.Float, nullable=False)
     z = db.Column(db.Float, nullable=False)
 
-    def __repr__(self):
-        return f"BallPosition(x={self.x}, y={self.y}, z={self.z})"
 
-   
 @app.route('/')
 def index():
     return send_from_directory(os.path.join(app.root_path, '..', 'Front End'), 'index.html')
-@app.route('/home.html')
-def home():
-    return send_from_directory(os.path.join(app.root_path, '..', 'Front End'), 'home.html')
 
 @app.route('/register', methods=['POST'])
 def register():
@@ -58,7 +50,6 @@ def register():
     new_user = UserModel(username=username, email=email, password=password)
     db.session.add(new_user)
     db.session.commit()
-    print(f"Registered user: {new_user}")
     return jsonify({"message": "User registered successfully"}), 201
 
 @app.route('/login', methods=['POST'])
@@ -67,26 +58,18 @@ def login():
     email = data.get('email').strip()
     password = data.get('password').strip()
 
-    #print(f"Attempting login with username: {username}, password: {password}")
-
     user = UserModel.query.filter_by(email=email).first()
-    if not user:
-        #print(f"No such user: {username}")
-        return jsonify({"message": "Invalid credentials"}), 401
-
-    if user.password != password:
-        #print(f"Invalid password for user: {username}. Expected: {user.password}, Got: {password}")
+    if not user or user.password != password:
         return jsonify({"message": "Invalid credentials"}), 401
 
     session['user_id'] = user.id
     session['email'] = user.email
-    #print(f"Logged in user: {user}")
-    return jsonify({"message": "Logged in successfully","home_page_link":"home.html"}), 200
+    return jsonify({"message": "Logged in successfully", "home_page_link": "home.html"}), 200
 
 @app.route('/logout', methods=['POST'])
 def logout():
     session.pop('user_id', None)
-    session.pop('username', None)
+    session.pop('email', None)
     return jsonify({"message": "Logged out successfully"}), 200
 
 @app.route('/position', methods=['POST'])
@@ -100,7 +83,7 @@ def update_position():
     db.session.add(new_position)
     db.session.commit()
 
-    socketio.emit('update_position', {'x': x, 'y': y, 'z': z},to = None)
+    socketio.emit('update_position', {'x': x, 'y': y, 'z': z}, to=None)
     return jsonify({"message": "Position updated successfully"}), 201
 
 @app.route('/position', methods=['GET'])
@@ -110,7 +93,6 @@ def get_position():
         return jsonify({"x": position.x, "y": position.y, "z": position.z}), 200
     else:
         return jsonify({"message": "No position found"}), 404
-
 
 if __name__ == "__main__":
     with app.app_context():
