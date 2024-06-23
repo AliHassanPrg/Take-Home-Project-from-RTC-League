@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <title>Login & Signup Form</title>
-    <link rel="stylesheet" href="static/style.css">
+    <link rel="stylesheet" href="{{url_for('static',filename = 'css/style.css')}}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
   </head>
   <body>
@@ -21,7 +21,7 @@
           <div class="slider-tab"></div>
         </div>
         <div class="form-inner">
-          <form id="loginForm" class="login">
+          <form id="loginForm" class="login" action="{{url_for('login')}}" method="post">
             <div class="field">
               <input type="text" id="loginEmail" placeholder="Email Address" required>
             </div>
@@ -35,7 +35,7 @@
             </div>
             <div class="signup-link">Not a member? <a href="">Signup now</a></div>
           </form>
-          <form id="signupForm" class="signup">
+          <form id="signupForm" class="signup" action="{{url_for('register')}}" method="post">
             <div class="field">
               <input type="text" id="signupUsername" placeholder="Username" required>
             </div>
@@ -76,11 +76,13 @@
         return false;
       });
 
-      document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      var LoginForm = document.getElementById('loginForm');
+
+      LoginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const email = document.getElementById('loginEmail').value;
         const password = document.getElementById('loginPassword').value;
-        const response = await fetch('http://127.0.0.1:5000/login', {
+        const response = await fetch(LoginForm.action, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -89,14 +91,16 @@
         });
         const data = await response.json();
         if (response.ok) {
-          const home_page_link = data['home_page_link'];
-          window.location.href = home_page_link;
+          window.location.href = data.home_page_link;
         } else {
           alert('Login failed: ' + data.message);
         }
       });
 
-      document.getElementById('signupForm').addEventListener('submit', async (e) => {
+
+      var SignupForm = document.getElementById('signupForm');
+
+      SignupForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const username = document.getElementById('signupUsername').value;
         const email = document.getElementById('signupEmail').value;
@@ -106,7 +110,7 @@
           alert('Passwords do not match!');
           return;
         }
-        const response = await fetch('http://127.0.0.1:5000/register', {
+        const response = await fetch(SignupForm.action, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

@@ -1,10 +1,10 @@
-const socket = io('http://127.0.0.1:5000/login');
+const socket = io();
 
 let scene, camera, renderer, ball;
 
 async function updatePosition(x, y, z) {
     try {
-        const response = await fetch('http://127.0.0.1:5000/position', {
+        const response = await fetch('/position', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -36,7 +36,7 @@ function init() {
     scene.add(ball);
 
     // Fetch initial position
-    fetch('http://127.0.0.1:5000/position')
+    fetch('/position')
         .then(response => response.json())
         .then(data => {
             ball.position.set(data.x, data.y, data.z);
@@ -61,14 +61,15 @@ function updateBallPosition() {
 
 async function logout() {
     try {
-        const response = await fetch('http://127.0.0.1:5000/logout', {
+        const response = await fetch('/logout', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             }
         });
+        const data = await response.json();
         if (response.ok) {
-            window.location.href = 'index.html';
+            window.location.href = data.index_page_link ;
         } else {
             alert('Logout failed');
         }

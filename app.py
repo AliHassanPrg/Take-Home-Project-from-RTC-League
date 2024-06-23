@@ -1,13 +1,11 @@
-from flask import Flask, request, jsonify, session, send_from_directory, redirect, url_for
+from flask import Flask, request, jsonify, session, url_for , render_template
 from flask_sqlalchemy import SQLAlchemy
 from flask_session import Session
 import secrets
 from flask_cors import CORS
 from flask_socketio import SocketIO
-import os
-from functools import wraps
 
-app = Flask(__name__, static_folder='../Front End/static', static_url_path='/static')
+app = Flask(__name__, static_url_path='/static')
 
 CORS(app)
 
@@ -33,7 +31,7 @@ class BallPosition(db.Model):
 
 @app.route('/')
 def index():
-    return send_from_directory(os.path.join(app.root_path, '..', 'Front End'), 'index.html')
+    return render_template("index.html")
 
 @app.route('/register', methods=['POST'])
 def register():
@@ -52,6 +50,10 @@ def register():
     db.session.commit()
     return jsonify({"message": "User registered successfully"}), 201
 
+@app.route('/home' , methods = ['GET'])
+def homepage():
+    return render_template("home.html")
+
 @app.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
@@ -64,13 +66,13 @@ def login():
 
     session['user_id'] = user.id
     session['email'] = user.email
-    return jsonify({"message": "Logged in successfully", "home_page_link": "home.html"}), 200
+    return jsonify({"message": "Logged in successfully", "home_page_link": url_for('homepage')}), 200
 
 @app.route('/logout', methods=['POST'])
 def logout():
     session.pop('user_id', None)
     session.pop('email', None)
-    return jsonify({"message": "Logged out successfully"}), 200
+    return jsonify({"message": "Logged out successfully", "index_page_link": url_for('index')}), 200
 
 @app.route('/position', methods=['POST'])
 def update_position():
